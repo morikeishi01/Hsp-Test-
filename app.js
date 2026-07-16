@@ -6,6 +6,7 @@
 var T = {
   en: {
     title: "Highly Sensitive Person Scale - Revised (HSP-R)",
+    heroSubtitle: "A contemplative self-assessment",
     instructions: "Please answer each question below by circling the number between 1 = \u201cNot at all\u201d to 7 \u201cExtremely\u201d that describes you best as a person overall. If a question can\u2019t be answered, please just leave it out and move on.",
     translationNote: "",
     viewResults: "View Results",
@@ -60,6 +61,7 @@ var T = {
   },
   ja: {
     title: "\u6539\u8a02\u7248 \u9ad8\u611f\u53d7\u6027\u8005\u5c3a\u5ea6\uff08HSP-R\uff09",
+    heroSubtitle: "\u9759\u304b\u306a\u5185\u7701\u306e\u305f\u3081\u306e\u81ea\u5df1\u8a55\u4fa1",
     instructions: "以下の各質問について、1＝まったく当てはまらない、7＝非常に当てはまるの間から、あなた自身全体として最もよく当てはまる数字を選んでください。答えられない質問は飛ばして次に進んでください。",
     translationNote: "※日本語版は翻訳の便宜上作成されたものであり、英語版がオリジナルです。",
     viewResults: "結果を見る",
@@ -114,6 +116,7 @@ var T = {
   },
   vi: {
     title: "Thang đo Người nhạy cảm cao \u2013 Bản sửa đổi (HSP-R)",
+    heroSubtitle: "Một bài tự đánh giá nội tâm",
     instructions: "Vui lòng trả lời mỗi câu hỏi bên dưới bằng cách chọn số từ 1 = Hoàn toàn không đến 7 = Cực kỳ phù hợp, mô tả đúng nhất về bạn nói chung. Nếu không thể trả lời câu nào, hãy bỏ qua và chuyển sang câu tiếp theo.",
     translationNote: "Lưu ý: Bản dịch tiếng Việt chỉ để thuận tiện, bản tiếng Anh là nguồn gốc.",
     viewResults: "Xem kết quả",
@@ -181,11 +184,14 @@ var GROUPS = [
 // ── State ─────────────────────────────────────────────────────
 var lang = "en";
 var answers = {};
+var cardObserver = null;
+var prefersReducedMotion = window.matchMedia("(prefers-reduced-motion: reduce)").matches;
 
 // ── DOM refs ──────────────────────────────────────────────────
 var $title        = document.getElementById("title");
 var $instructions = document.getElementById("instructions");
 var $transNote    = document.getElementById("translation-note");
+var $heroSubtitle = document.getElementById("hero-subtitle");
 var $progressBar  = document.getElementById("progressBar");
 var $progressText = document.getElementById("progressText");
 var $quiz         = document.getElementById("quiz");
@@ -223,6 +229,7 @@ function renderQuiz() {
     html += '</fieldset>';
   }
   $quiz.innerHTML = html;
+  setupCardReveal();
 }
 
 // ── Update static text ────────────────────────────────────────
@@ -233,6 +240,7 @@ function updateText() {
   $title.textContent = t.title;
   $instructions.textContent = t.instructions;
   $transNote.textContent = t.translationNote;
+  if ($heroSubtitle) $heroSubtitle.textContent = t.heroSubtitle;
   $btnResult.textContent = t.viewResults;
   $btnReset.textContent = t.startOver;
   $btnResult.setAttribute("aria-label", t.viewResults);
@@ -319,7 +327,7 @@ $btnResult.addEventListener("click", function() {
   if (r.answered === 0) {
     $results.innerHTML = '<div class="error">' + t.notEnough + '</div>';
     $results.classList.remove("hidden");
-    $results.scrollIntoView({ behavior: "smooth" });
+    $results.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth" });
     return;
   }
 
@@ -364,7 +372,7 @@ $btnResult.addEventListener("click", function() {
 
   $results.innerHTML = html;
   $results.classList.remove("hidden");
-  $results.scrollIntoView({ behavior: "smooth" });
+  $results.scrollIntoView({ behavior: prefersReducedMotion ? "auto" : "smooth" });
 });
 
 // ── Reset ─────────────────────────────────────────────────────
@@ -373,12 +381,87 @@ $btnReset.addEventListener("click", function() {
   updateProgress();
   renderQuiz();
   $results.classList.add("hidden");
-  window.scrollTo({ top: 0, behavior: "smooth" });
+  window.scrollTo({ top: 0, behavior: prefersReducedMotion ? "auto" : "smooth" });
 });
 
 // ── Init ──────────────────────────────────────────────────────
 updateText();
 renderQuiz();
 updateProgress();
+initMotionEnhancements();
+
+// ── Motion Enhancements ──────────────────────────────────────
+function initMotionEnhancements() {
+  // Pointer-following aura — desktop fine-pointer only
+  if (!prefersReducedMotion) {
+    var aura = document.querySelector(".pointer-aura");
+    if (aura && window.matchMedia("(pointer: fine)").matches) {
+      var auraRaf = null;
+      var auraX = -400, auraY = -400;
+
+      document.addEventListener("mousemove", function(e) {
+        auraX = e.clientX;
+        auraY = e.clientY;
+        if (!auraRaf) {
+          auraRaf = requestAnimationFrame(function() {
+            aura.style.left = auraX + "px";
+            aura.style.top = auraY + "px";
+            aura.classList.add("active");
+            auraRaf = null;
+          });
+        }
+      });
+
+      document.addEventListener("mouseleave", function() {
+        aura.classList.remove("active");
+      });
+    }
+  }
+
+  // Re-trigger result reveal animation when results section content changes
+  var resultsObserver = new MutationObserver(function() {
+    if (!$results.classList.contains("hidden")) {
+      $results.style.animation = "none";
+      void $results.offsetHeight;
+      $results.style.animation = "";
+    }
+  });
+  resultsObserver.observe($results, { childList: true });
+}
+
+function setupCardReveal() {
+  // Disconnect any previous observer
+  if (cardObserver) {
+    cardObserver.disconnect();
+    cardObserver = null;
+  }
+
+  var cards = $quiz.querySelectorAll(".question-card");
+
+  if (prefersReducedMotion || !("IntersectionObserver" in window)) {
+    showAllCards();
+    return;
+  }
+
+  cardObserver = new IntersectionObserver(function(entries) {
+    for (var i = 0; i < entries.length; i++) {
+      if (entries[i].isIntersecting) {
+        entries[i].target.classList.add("card-visible");
+        cardObserver.unobserve(entries[i].target);
+      }
+    }
+  }, { threshold: 0.15, rootMargin: "0px 0px -40px 0px" });
+
+  for (var i = 0; i < cards.length; i++) {
+    cardObserver.observe(cards[i]);
+  }
+}
+
+function showAllCards() {
+  var cards = $quiz.querySelectorAll(".question-card");
+  for (var i = 0; i < cards.length; i++) {
+    cards[i].classList.add("card-visible");
+  }
+}
 
 })();
