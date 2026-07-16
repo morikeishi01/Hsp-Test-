@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>HSP-R — Highly Sensitive Person Scale - Revised</title>
+  <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <div class="lang-switch" role="group" aria-label="Language selection">
+        <button data-lang="en" class="active" aria-label="English">English</button>
+        <button data-lang="ja" aria-label="日本語">日本語</button>
+        <button data-lang="vi" aria-label="Tiếng Việt">Tiếng Việt</button>
+      </div>
+      <h1 id="title">Highly Sensitive Person Scale - Revised (HSP-R)</h1>
+      <p id="instructions" class="instructions"></p>
+      <p id="translation-note" class="translation-note"></p>
+      <div class="progress-bar-container" aria-label="Progress">
+        <div class="progress-bar" id="progressBar" style="width:0%"></div>
+        <span class="progress-text" id="progressText">0 / 18</span>
+      </div>
+    </header>
+
+    <main id="quiz">
+      <!-- 18 questions rendered by JS -->
+    </main>
+
+    <div class="actions">
+      <button id="btnResult" class="btn-primary" aria-label="View results"></button>
+      <button id="btnReset" class="btn-secondary" aria-label="Start over"></button>
+    </div>
+
+    <section id="results" class="results hidden" aria-live="polite"></section>
+
+    <footer>
+      <p id="copyright"></p>
+      <p id="disclaimer"></p>
+      <p id="citation"></p>
+      <p>
+        <a href="https://sensitivityresearch.com/" target="_blank" rel="noopener">sensitivityresearch.com</a> |
+        <a href="https://hsperson.com/" target="_blank" rel="noopener">hsperson.com</a>
+      </p>
+    </footer>
+  </div>
+  <script src="app.js"></script>
+</body>
+</html>
